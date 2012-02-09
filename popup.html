@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<style>
+	* {margin:0; padding:0; outline:none; font: normal 13px/100% Verdana, Tahoma, sans-serif; }
+	img { border: 0; }
+
+	body { background: #FFF; }
+	.show { top:0 }
+	.hide { top:-23px }
+
+	#canvas { margin: 100px;  background-color: #fff; }
+	#response {width:100%; height:100px; margin:0px; padding:10px; text-align:center; color: #000; }
+	</style>
+</head>
+
+<body>
+	<div id='ajax-action' style="display:none;"></div>
+	<div id='response'></div>
+	
+	<canvas id="canvas" width="600" height="600">
+		<div>your browser is not supporting canvas! please use Chrome v12 or newer</div>
+	</canvas>		
+	
+	<script src="mootools-1.2.4-core-jm.js" type="text/javascript"></script>
+	<script src="cmt.js" type="text/javascript"></script>
+	
+	<script> 
+	
+	// Show loading image until done
+	document.getElementById('response').innerHTML='<img src="loading.gif" alt="loading..." />';
+	
+	chrome.tabs.getSelected(null, function(tab) {
+	  chrome.tabs.sendRequest(tab.id, {greeting: "hello"}, function(response) {
+	   							
+			var imageUrl=null;
+
+			// 1. Get image ID
+			parentHtml=response.parentHtml;
+			
+			txtSearch='javascript:requestDownload';
+			parentHtml = parentHtml.substr(parentHtml.search(txtSearch)+txtSearch.length);
+			parentHtml = parentHtml.substr(0, parentHtml.search(";"));
+			imgID=parentHtml.replace(/^\s+|\s+$/g,"");
+			imgID=imgID.replace('(','');
+			imgID=imgID.replace(')','');
+			
+			// 2. Get target page
+			var xhr = new XMLHttpRequest();
+			xhr.onreadystatechange = function(){
+				if (xhr.readyState == 4) {
+					txtSearch='<p>Please select format.</p>';
+					parseHtml=xhr.responseText;
+					parseHtml=parseHtml.substr(parseHtml.search(txtSearch)+txtSearch.length);
+
+					txtSearch='href="';
+					parseHtml=parseHtml.substr(parseHtml.search(txtSearch)+txtSearch.length);
+
+					txtSearch='">';
+					parseHtml=parseHtml.substr(0, parseHtml.search(txtSearch));
+
+					imageUrl="http://portal.picture-alliance.com"+parseHtml;
+
+					// Run image downloader
+					getImage(imageUrl);
+				}
+			};
+			xhr.open("GET", "http://portal.picture-alliance.com/customer/compilation/downloadOrder.jsp?ogId=&boId="+imgID, true);
+			xhr.send();
+	
+	  });
+	});
+	</script>
+	
+</body>
+</html>
